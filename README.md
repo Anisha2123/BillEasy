@@ -453,3 +453,14 @@ Endpoints for creating, updating, and deleting book reviews. All review modifica
     }
     ```
   - **Authentication:** 🔒 **Auth Required**.
+
+![image](https://github.com/user-attachments/assets/9efc3e48-424d-4fcf-9fcf-45c9f3af0e67)
+![image](https://github.com/user-attachments/assets/0ebc0d98-4e45-4926-ad60-258bc94e1259)
+![image](https://github.com/user-attachments/assets/6357044c-d50e-4f2f-90a2-c28189355e86)
+![image](https://github.com/user-attachments/assets/14dc7461-c997-4d2f-8c4d-22bbd812fc89)
+![image](https://github.com/user-attachments/assets/adb2e7d2-57b9-4e3b-840c-18b6b4dce63a)
+
+
+
+
+
