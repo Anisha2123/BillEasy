@@ -1,0 +1,15 @@
+
+
+# Book Review API
+
+## 📦 Tech Stack
+- Node.js + Express
+- MongoDB + Mongoose
+- JWT Authentication
+
+## 🔧 Setup
+```bash
+git clone https://github.com/yourusername/book-review-api
+cd book-review-api
+npm install
+npm run dev
