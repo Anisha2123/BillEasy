@@ -1,8 +1,12 @@
+![book_review_er_diagram](https://github.com/user-attachments/assets/b4630692-c8c1-4dde-aa05-3de8287f2a61)
+![image](https://github.com/user-attachments/assets/bd492aa1-9459-4c65-9dc0-e62000f6e675)
+
 
 
 # Book Review API Documentation
 
 This document provides details for all available API endpoints for the Book Review application.
+The example URLs assume the server is running on `http://localhost:3000`. This base URL might change depending on your `PORT` environment variable or deployment. Placeholders like `{bookId}`, `{reviewId}`, or `{searchTerm}` in the URLs should be replaced with actual values.
 
 ## 📦 Tech Stack
 - Node.js + Express (^5.1.0)
@@ -17,13 +21,13 @@ This document provides details for all available API endpoints for the Book Revi
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/yourusername/book-review-api # Replace with your actual repository URL
-    cd book-review-api
+    git clone https://github.com/Anisha2123/BillEasy
     ```
 
 2.  **Install dependencies:**
     ```bash
     npm install
+    npm i nodemon
     ```
 
 3.  **Set up environment variables:**
@@ -44,8 +48,9 @@ This document provides details for all available API endpoints for the Book Revi
     ```
     The server will start, typically on `http://localhost:3000` (or the port you specified).
 
-## Base URL
-All API endpoints are prefixed with `/api`. For example, an auth endpoint `/signup` would be accessible at `http://localhost:3000/api/auth/signup`.
+## Base API URL
+All API endpoints are prefixed with `/api`.
+**Example Base:** `http://localhost:3000/api`
 
 ## Authentication
 Endpoints marked with "🔒 **Auth Required**" require a JSON Web Token (JWT) to be passed in the `Authorization` header as a Bearer token.
@@ -59,7 +64,8 @@ Endpoints for user registration and login.
 
 ### 1. User Signup
   - **Method:** `POST`
-  - **Path:** `/api/auth/signup`
+  - **Path:** `/auth/signup`
+  - **Full URL:** `http://localhost:3000/api/auth/signup`
   - **Description:** Registers a new user in the system.
   - **Request Body:**
     ```json
@@ -75,19 +81,18 @@ Endpoints for user registration and login.
       "message": "User registered"
     }
     ```
-  - **Error Response (e.g., 400 Bad Request if username is taken or validation fails due to Mongoose schema):**
-    If the username already exists, Mongoose will throw an error which, if not handled specifically, might result in a generic 500 error or a more specific Mongoose error response. A typical error for duplicate key would be:
+  - **Error Response (e.g., 400 Bad Request if username is taken):**
     ```json
     {
-      "error": "E11000 duplicate key error collection: <db_name>.users index: username_1 dup key: { username: \"newuser\" }" // Example of a raw MongoDB error
+      "error": "E11000 duplicate key error collection: <db_name>.users index: username_1 dup key: { username: \"newuser\" }"
     }
     ```
-    *(Note: The current implementation saves the user and returns a success message. More detailed error handling for specific validation failures like "Username already exists" could be added.)*
   - **Authentication:** Not required.
 
 ### 2. User Login
   - **Method:** `POST`
-  - **Path:** `/api/auth/login`
+  - **Path:** `/auth/login`
+  - **Full URL:** `http://localhost:3000/api/auth/login`
   - **Description:** Authenticates an existing user and returns a JWT for accessing protected routes.
   - **Request Body:**
     ```json
@@ -116,207 +121,56 @@ Endpoints for user registration and login.
 
 Endpoints for retrieving book information.
 
-### 1. Search Books
-  - **Method:** `GET`
-  - **Path:** `/api/books/search`
-  - **Description:** Searches for books by title or author using a case-insensitive regex match.
-  - **Query Parameters:**
-    - `query` (string, **required**): The search term to look for in book titles or authors.
-  - **Example Request:** `GET /api/books/search?query=Cosmos`
-  - **Success Response (200 OK):**
-    Returns an array of matching book objects.
-    ```json
-    [
-      {
-        "_id": "66a7e8f1c3b4d5e6f7a8b9c0",
-        "title": "Cosmos",
-        "author": "Carl Sagan",
-        "genre": "Science",
-        "reviews": [],
-        "createdBy": "66a7e90ac3b4d5e6f7a8b9c1"
-        // Note: 'reviews' array here refers to the ObjectId references in the Book model.
-        // It may or may not be populated depending on whether they were added to the Book document.
-      }
-    ]
-    ```
-    If no books match, an empty array `[]` is returned.
-  - **Error Response (400 Bad Request):**
-    If the `query` parameter is missing.
-    ```json
-    {
-      "error": "Missing search query"
-    }
-    ```
-  - **Error Response (500 Internal Server Error):**
-    For unexpected server issues.
-    ```json
-    {
-      "error": "Server error"
-    }
-    ```
-  - **Authentication:** Not required.
-
-### 2. List All Books (with Pagination and Filtering)
-  - **Method:** `GET`
-  - **Path:** `/api/books/`
-  - **Description:** Retrieves a paginated list of all books. Supports filtering by author and genre (case-insensitive). Populates associated reviews for each book and provides a total count of matching books.
-  - **Query Parameters:**
-    - `page` (number, optional, default: `1`): The page number for pagination.
-    - `limit` (number, optional, default: `10`): The number of books to return per page.
-    - `author` (string, optional): Filter books by author name (case-insensitive regex match).
-    - `genre` (string, optional): Filter books by genre (case-insensitive regex match).
-  - **Example Request:** `GET /api/books?page=1&limit=5&author=Sagan&genre=Science`
-  - **Success Response (200 OK):**
-    ```json
-    {
-      "total": 1, // Total number of books matching the filter
-      "page": 1,
-      "limit": 5,
-      "books": [
-        {
-          "_id": "66a7e8f1c3b4d5e6f7a8b9c0",
-          "title": "Cosmos",
-          "author": "Carl Sagan",
-          "genre": "Science",
-          "reviews": [ // Populated reviews, if Book.reviews array has review ObjectIds
-            {
-              "_id": "66a7e91fc3b4d5e6f7a8b9c2",
-              "book": "66a7e8f1c3b4d5e6f7a8b9c0",
-              "user": "66a7e90ac3b4d5e6f7a8b9c1", // Could be populated user object or just ID
-              "rating": 5,
-              "comment": "A classic!",
-              "createdAt": "2024-07-29T10:00:00.000Z",
-              "updatedAt": "2024-07-29T10:00:00.000Z"
-            }
-          ],
-          "createdBy": "66a7e90ac3b4d5e6f7a8b9c1" // User ID of the creator
-        }
-      ]
-    }
-    ```
-    *(Note: The `book.routes.js` file contains a duplicate `GET /` route definition. This documentation refers to the first, more comprehensive implementation which includes review population and total count. The second, simpler `GET /` route will not be hit due to Express routing order.)*
-  - **Error Response (500 Internal Server Error):**
-    For unexpected server issues.
-    ```json
-    {
-      "error": "Server error"
-    }
-    ```
-  - **Authentication:** Not required.
-
-### 3. Get Book by ID (with Paginated Reviews and Average Rating)
-  - **Method:** `GET`
-  - **Path:** `/api/books/:id`
-  - **Description:** Retrieves details for a specific book by its ID. Also includes paginated reviews for the book and calculates its average rating.
-  - **Path Parameters:**
-    - `id` (string, **required**): The MongoDB ObjectId of the book.
-  - **Query Parameters (for review pagination):**
-    - `page` (number, optional, default: `1`): The page number for the list of reviews.
-    - `limit` (number, optional, default: `5`): The number of reviews to return per page.
-  - **Example Request:** `GET /api/books/66a7e8f1c3b4d5e6f7a8b9c0?page=1&limit=2`
-  - **Success Response (200 OK):**
-    ```json
-    {
-      "_id": "66a7e8f1c3b4d5e6f7a8b9c0",
-      "title": "Cosmos",
-      "author": "Carl Sagan",
-      "genre": "Science",
-      "createdBy": "66a7e90ac3b4d5e6f7a8b9c1", // User ID of creator
-      "averageRating": "4.8", // String representation of average rating, or null if no reviews
-      "reviews": [ // Paginated list of reviews for this book
-        {
-          "_id": "66a7e91fc3b4d5e6f7a8b9c2",
-          "book": "66a7e8f1c3b4d5e6f7a8b9c0",
-          "user": { // User details populated (username only)
-            "_id": "66a7e90ac3b4d5e6f7a8b9c1",
-            "username": "testuser"
-          },
-          "rating": 5,
-          "comment": "Absolutely enlightening!",
-          "createdAt": "2024-07-29T10:00:00.000Z",
-          "updatedAt": "2024-07-29T10:00:00.000Z"
-        },
-        {
-          "_id": "66a7e93ac3b4d5e6f7a8b9c3",
-          "book": "66a7e8f1c3b4d5e6f7a8b9c0",
-          "user": {
-            "_id": "66a7e94fc3b4d5e6f7a8b9c4",
-            "username": "anotherreviewer"
-          },
-          "rating": 4,
-          "comment": "Very good read.",
-          "createdAt": "2024-07-28T12:00:00.000Z",
-          "updatedAt": "2024-07-28T12:00:00.000Z"
-        }
-      ]
-    }
-    ```
-  - **Error Response (404 Not Found):**
-    If no book exists with the provided ID.
-    ```json
-    {
-      "message": "Book not found"
-    }
-    ```
-  - **Error Response (500 Internal Server Error):**
-    For unexpected server issues.
-    ```json
-    {
-      "error": "Server error"
-    }
-    ```
-  - **Authentication:** Not required.
-
-### 4. Test Route (Internal/Development)
-  - **Method:** `GET`
-  - **Path:** `/api/books/test`
-  - **Description:** A simple test endpoint to check if the books route is responsive.
-  - **Success Response (200 OK):**
-    Content-Type: `text/html; charset=utf-8`
-    Body: `Test OK`
-  - **Authentication:** Not required.
-  *(Note: This route appears to be for development or testing purposes and might not be intended for public consumption.)*
-
 ---
 
-## Reviews API (`/api/reviews`)
-
-Endpoints for creating, updating, and deleting book reviews. All review modification endpoints require authentication.
-
-### 1. Add a Review to a Book
+### 1. Add a New Book (Create Book)
   - **Method:** `POST`
-  - **Path:** `/api/reviews/book/:id`
-  - **Description:** Adds a new review for a specific book. A user can only submit one review per book.
-    *(Note: This action creates a `Review` document. It does not automatically update the `reviews` array in the corresponding `Book` document.)*
-  - **Path Parameters:**
-    - `id` (string, **required**): The MongoDB ObjectId of the book to review.
+  - **Path:** `/books/`
+  - **Full URL:** `http://localhost:3000/api/books/`
+  - **Description:** Creates a new book entry in the system. The book will be associated with the authenticated user who created it.
   - **Headers:**
     - `Authorization: Bearer <YOUR_JWT_TOKEN>` (🔒 **Auth Required**)
+    - `Content-Type: application/json`
   - **Request Body:**
     ```json
     {
-      "rating": 5,                  // Number, e.g., 1-5
-      "comment": "This book was amazing and insightful!" // String
+      "title": "The Hitchhiker's Guide to the Galaxy",
+      "author": "Douglas Adams",
+      "genre": "Science Fiction Comedy"
     }
     ```
+    *Required fields: `title`, `author`, `genre`.*
   - **Success Response (201 Created):**
-    Returns the newly created review object.
+    Returns the newly created book object.
     ```json
     {
-      "_id": "66a7e91fc3b4d5e6f7a8b9c2",
-      "book": "66a7e8f1c3b4d5e6f7a8b9c0", // Book ID
-      "user": "66a7e90ac3b4d5e6f7a8b9c1", // User ID from JWT
-      "rating": 5,
-      "comment": "This book was amazing and insightful!",
-      "createdAt": "2024-07-29T10:00:00.000Z",
-      "updatedAt": "2024-07-29T10:00:00.000Z"
+      "_id": "66a8f4c123abc123def45678",
+      "title": "The Hitchhiker's Guide to the Galaxy",
+      "author": "Douglas Adams",
+      "genre": "Science Fiction Comedy",
+      "reviews": [],
+      "createdBy": "66a7e90ac3b4d5e6f7a8b9c1", // ID of the user who created the book
+      "__v": 0 // Mongoose version key
+      // createdAt and updatedAt fields will also be present if timestamps: true is in your schema
     }
     ```
   - **Error Response (400 Bad Request):**
-    If the user has already reviewed this book.
+    If required fields are missing.
     ```json
     {
-      "msg": "You already reviewed this book"
+      "msg": "Please provide title, author, and genre"
+    }
+    ```
+    Or for more detailed Mongoose validation errors (if implemented):
+    ```json
+    {
+      "msg": "Validation Error",
+      "errors": {
+        "title": {
+          "message": "Path `title` is required.",
+          "name": "ValidatorError"
+        }
+      }
     }
     ```
   - **Error Response (401 Unauthorized):**
@@ -333,14 +187,219 @@ Endpoints for creating, updating, and deleting book reviews. All review modifica
       "msg": "Invalid token"
     }
     ```
+  - **Error Response (500 Internal Server Error):**
+    For unexpected server issues during book creation.
+    ```json
+    {
+      "error": "Server error while creating book"
+    }
+    ```
+  - **Authentication:** 🔒 **Auth Required**.
+
+---
+### 2. Search Books
+  - **Method:** `GET`
+  - **Path:** `/books/search`
+  - **Full URL Example:** `http://localhost:3000/api/books/search?query={searchTerm}`
+  - **Description:** Searches for books by title or author using a case-insensitive regex match.
+  - **Query Parameters:**
+    - `query` (string, **required**): The search term to look for in book titles or authors. (e.g., `query=Paulo`)
+  - **Example Request:** `GET http://localhost:3000/api/books?author=Paulo&genre=Fiction&page=1&limit=3`
+  - **Success Response (200 OK):**
+    Returns an array of matching book objects.
+    ```json
+    {
+    "total": 6,
+    "page": 1,
+    "limit": 3,
+    "books": [
+        {
+            "_id": "682bf73db53c21718e1a7533",
+            "title": "The Alchemist",
+            "author": "Paulo Coelho",
+            "genre": "Fiction",
+            "reviews": [],
+            "createdBy": "682be322e9524221d2715f7b",
+            "__v": 0
+        },
+        {
+            "reviews": [],
+            "_id": "682c3888db0dd1d5ebead308",
+            "title": "The Alchemist",
+            "author": "Paulo Coelho",
+            "genre": "Fiction"
+        },
+        {
+            "reviews": [],
+            "_id": "682c38c7db0dd1d5ebead328",
+            "title": "The Alchemist",
+            "author": "Paulo Coelho",
+            "genre": "Fiction"
+        }
+    ]
+}
+    ```
+    If no books match, an empty array `[]` is returned.
+  - **Error Response (400 Bad Request):**
+    ```json
+    {
+      "error": "Missing search query"
+    }
+    ```
+  - **Error Response (500 Internal Server Error):**
+    ```json
+    {
+      "error": "Server error"
+    }
+    ```
+  - **Authentication:** Not required.
+
+### 3. List All Books (with Pagination and Filtering)
+  - **Method:** `GET`
+  - **Path:** `/books/`
+  - **Full URL Example:** `http://localhost:3000/api/books/`
+  - **Description:** Retrieves a paginated list of all books. Supports filtering by author and genre (case-insensitive). Populates associated reviews for each book and provides a total count of matching books.
+  - **Query Parameters:**
+    - `page` (number, optional, default: `1`): The page number for pagination.
+    - `limit` (number, optional, default: `10`): The number of books to return per page.
+    - `author` (string, optional): Filter books by author name (case-insensitive regex match).
+    - `genre` (string, optional): Filter books by genre (case-insensitive regex match).
+  - **Example Request:** `GET http://localhost:3000/api/books?page=1&limit=5&author=Sagan&genre=Science`
+  - **Success Response (200 OK):**
+    ```json
+    {
+      "total": 1,
+      "page": 1,
+      "limit": 5,
+      "books": [
+        {
+          "_id": "66a7e8f1c3b4d5e6f7a8b9c0",
+          "title": "Cosmos",
+          "author": "Carl Sagan",
+          "genre": "Science",
+          "reviews": [ /* Populated reviews */ ],
+          "createdBy": "66a7e90ac3b4d5e6f7a8b9c1"
+        }
+      ]
+    }
+    ```
+  - **Error Response (500 Internal Server Error):**
+    ```json
+    {
+      "error": "Server error"
+    }
+    ```
+  - **Authentication:** Not required.
+
+### 4. Get Book by ID (with Paginated Reviews and Average Rating)
+  - **Method:** `GET`
+  - **Path:** `/books/{bookId}`
+  - **Full URL Example:** `http://localhost:3000/api/books/{bookId}`
+  - **Description:** Retrieves details for a specific book by its ID. Also includes paginated reviews for the book and calculates its average rating.
+  - **Path Parameters:**
+    - `{bookId}` (string, **required**): The MongoDB ObjectId of the book.
+  - **Query Parameters (for review pagination):**
+    - `page` (number, optional, default: `1`): The page number for the list of reviews.
+    - `limit` (number, optional, default: `5`): The number of reviews to return per page.
+  - **Example Request:** `GET http://localhost:3000/api/books/66a7e8f1c3b4d5e6f7a8b9c0?page=1&limit=2`
+  - **Success Response (200 OK):**
+    ```json
+    {
+      "_id": "66a7e8f1c3b4d5e6f7a8b9c0",
+      "title": "Cosmos",
+      "author": "Carl Sagan",
+      "genre": "Science",
+      "createdBy": "66a7e90ac3b4d5e6f7a8b9c1",
+      "averageRating": "4.8",
+      "reviews": [ /* Paginated list of reviews */ ]
+    }
+    ```
+  - **Error Response (404 Not Found):**
+    ```json
+    {
+      "message": "Book not found"
+    }
+    ```
+  - **Error Response (500 Internal Server Error):**
+    ```json
+    {
+      "error": "Server error"
+    }
+    ```
+  - **Authentication:** Not required.
+
+### 4. Test Route (Internal/Development)
+  - **Method:** `GET`
+  - **Path:** `/books/test`
+  - **Full URL:** `http://localhost:3000/api/books/test`
+  - **Description:** A simple test endpoint to check if the books route is responsive.
+  - **Success Response (200 OK):**
+    Content-Type: `text/html; charset=utf-8`
+    Body: `Test OK`
+  - **Authentication:** Not required.
+
+---
+
+## Reviews API (`/api/reviews`)
+
+Endpoints for creating, updating, and deleting book reviews. All review modification endpoints require authentication.
+
+### 1. Add a Review to a Book
+  - **Method:** `POST`
+  - **Path:** `/reviews/book/{bookId}`
+  - **Full URL Example:** `http://localhost:3000/api/reviews/book/{bookId}`
+  - **Description:** Adds a new review for a specific book. A user can only submit one review per book.
+  - **Path Parameters:**
+    - `{bookId}` (string, **required**): The MongoDB ObjectId of the book to review.
+  - **Headers:**
+    - `Authorization: Bearer <YOUR_JWT_TOKEN>` (🔒 **Auth Required**)
+  - **Request Body:**
+    ```json
+    {
+      "rating": 5,
+      "comment": "This book was amazing and insightful!"
+    }
+    ```
+  - **Success Response (201 Created):**
+    Returns the newly created review object.
+    ```json
+    {
+      "_id": "66a7e91fc3b4d5e6f7a8b9c2",
+      "book": "{bookId}",
+      "user": "{userIdFromToken}",
+      "rating": 5,
+      "comment": "This book was amazing and insightful!",
+      "createdAt": "2024-07-29T10:00:00.000Z",
+      "updatedAt": "2024-07-29T10:00:00.000Z"
+    }
+    ```
+  - **Error Response (400 Bad Request):**
+    ```json
+    {
+      "msg": "You already reviewed this book"
+    }
+    ```
+  - **Error Response (401 Unauthorized):**
+    ```json
+    {
+      "msg": "No token provided"
+    }
+    ```
+  - **Error Response (403 Forbidden):**
+    ```json
+    {
+      "msg": "Invalid token"
+    }
+    ```
   - **Authentication:** 🔒 **Auth Required**.
 
 ### 2. Update a Review
   - **Method:** `PUT`
-  - **Path:** `/api/reviews/:id`
+  - **Path:** `/reviews/{reviewId}`
+  - **Full URL Example:** `http://localhost:3000/api/reviews/{reviewId}`
   - **Description:** Updates an existing review. Users can only update reviews they have created.
   - **Path Parameters:**
-    - `id` (string, **required**): The MongoDB ObjectId of the review to update.
+    - `{reviewId}` (string, **required**): The MongoDB ObjectId of the review to update.
   - **Headers:**
     - `Authorization: Bearer <YOUR_JWT_TOKEN>` (🔒 **Auth Required**)
   - **Request Body:** (Provide fields to update)
@@ -354,32 +413,30 @@ Endpoints for creating, updating, and deleting book reviews. All review modifica
     Returns the updated review object.
     ```json
     {
-      "_id": "66a7e91fc3b4d5e6f7a8b9c2", // Review ID
-      "book": "66a7e8f1c3b4d5e6f7a8b9c0",
-      "user": "66a7e90ac3b4d5e6f7a8b9c1",
+      "_id": "{reviewId}",
+      "book": "{bookId}",
+      "user": "{userIdFromToken}",
       "rating": 4,
       "comment": "Updated thoughts: Still great, but with a few minor criticisms.",
-      "createdAt": "2024-07-29T10:00:00.000Z", // Original creation date
-      "updatedAt": "2024-07-29T10:05:00.000Z"  // Time of update
+      "createdAt": "2024-07-29T10:00:00.000Z",
+      "updatedAt": "2024-07-29T10:05:00.000Z"
     }
     ```
   - **Error Response (404 Not Found):**
-    If the review is not found or the authenticated user is not the owner of the review.
     ```json
     {
       "msg": "Review not found"
     }
     ```
-  - **Error Response (401 Unauthorized / 403 Forbidden):** (As described in "Add a Review")
   - **Authentication:** 🔒 **Auth Required**.
 
 ### 3. Delete a Review
   - **Method:** `DELETE`
-  - **Path:** `/api/reviews/:id`
+  - **Path:** `/reviews/{reviewId}`
+  - **Full URL Example:** `http://localhost:3000/api/reviews/{reviewId}`
   - **Description:** Deletes an existing review. Users can only delete reviews they have created.
-    *(Note: This action deletes the `Review` document. It does not automatically update the `reviews` array in the corresponding `Book` document if it was ever populated there.)*
   - **Path Parameters:**
-    - `id` (string, **required**): The MongoDB ObjectId of the review to delete.
+    - `{reviewId}` (string, **required**): The MongoDB ObjectId of the review to delete.
   - **Headers:**
     - `Authorization: Bearer <YOUR_JWT_TOKEN>` (🔒 **Auth Required**)
   - **Success Response (200 OK):**
@@ -389,11 +446,9 @@ Endpoints for creating, updating, and deleting book reviews. All review modifica
     }
     ```
   - **Error Response (404 Not Found):**
-    If the review is not found or the authenticated user is not authorized to delete it.
     ```json
     {
       "msg": "Review not found or unauthorized"
     }
     ```
-  - **Error Response (401 Unauthorized / 403 Forbidden):** (As described in "Add a Review")
   - **Authentication:** 🔒 **Auth Required**.
