@@ -1,4 +1,4 @@
-![book_review_er_diagram](https://github.com/user-attachments/assets/b4630692-c8c1-4dde-aa05-3de8287f2a61)
+ER Diagram
 ![image](https://github.com/user-attachments/assets/bd492aa1-9459-4c65-9dc0-e62000f6e675)
 
 
